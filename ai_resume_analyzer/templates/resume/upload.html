@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Upload Resume — AI Resume Analyzer{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+
+      <!-- Page header -->
+      <div class="text-center mb-5">
+        <div class="mb-3">
+          <span class="bg-primary-subtle rounded-circle d-inline-flex align-items-center
+                       justify-content-center" style="width:72px;height:72px;">
+            <i class="bi bi-cloud-upload fs-2 text-primary"></i>
+          </span>
+        </div>
+        <h1 class="fw-bold">Analyze Your Resume</h1>
+        <p class="text-muted lead">Upload your PDF resume and paste a job description to get AI-powered insights.</p>
+      </div>
+
+      <!-- Upload form -->
+      <div class="card border-0 shadow">
+        <div class="card-body p-4 p-md-5">
+          <form method="post" enctype="multipart/form-data" id="uploadForm" novalidate>
+            {% csrf_token %}
+
+            <!-- Resume upload -->
+            <div class="mb-4">
+              <label for="{{ form.resume.id_for_label }}" class="form-label fw-semibold">
+                <i class="bi bi-file-earmark-pdf text-danger me-1"></i>
+                Resume PDF
+              </label>
+              {{ form.resume }}
+              {% if form.resume.errors %}
+                <div class="invalid-feedback d-block">{{ form.resume.errors.0 }}</div>
+              {% endif %}
+              <div class="form-text">{{ form.resume.help_text }}</div>
+
+              <!-- File preview area -->
+              <div id="filePreview" class="mt-2 d-none">
+                <div class="alert alert-success py-2 px-3 d-flex align-items-center gap-2 mb-0">
+                  <i class="bi bi-file-earmark-check-fill"></i>
+                  <span id="fileName" class="small fw-medium"></span>
+                  <span id="fileSize" class="text-muted small ms-1"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Job description -->
+            <div class="mb-4">
+              <label for="{{ form.job_description.id_for_label }}" class="form-label fw-semibold">
+                <i class="bi bi-briefcase text-primary me-1"></i>
+                Job Description
+              </label>
+              {{ form.job_description }}
+              {% if form.job_description.errors %}
+                <div class="invalid-feedback d-block">{{ form.job_description.errors.0 }}</div>
+              {% endif %}
+              <div class="form-text">{{ form.job_description.help_text }}</div>
+            </div>
+
+            <!-- Non-field errors -->
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+              {{ form.non_field_errors }}
+            </div>
+            {% endif %}
+
+            <!-- Submit -->
+            <div class="d-grid mt-4">
+              <button type="submit" class="btn btn-primary btn-lg fw-semibold" id="submitBtn">
+                <i class="bi bi-cpu me-2"></i>Analyze with AI
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Info cards -->
+      <div class="row g-3 mt-3">
+        <div class="col-md-4">
+          <div class="card border-0 bg-white shadow-sm h-100">
+            <div class="card-body text-center p-3">
+              <i class="bi bi-shield-check text-success fs-4 mb-2"></i>
+              <p class="small text-muted mb-0">PDF only · Max 5 MB</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card border-0 bg-white shadow-sm h-100">
+            <div class="card-body text-center p-3">
+              <i class="bi bi-lightning-charge text-warning fs-4 mb-2"></i>
+              <p class="small text-muted mb-0">Results in ~10 seconds</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card border-0 bg-white shadow-sm h-100">
+            <div class="card-body text-center p-3">
+              <i class="bi bi-clock-history text-info fs-4 mb-2"></i>
+              <p class="small text-muted mb-0">Saved for later review</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay" class="d-none position-fixed top-0 start-0 w-100 h-100
+     d-flex align-items-center justify-content-center"
+     style="background:rgba(0,0,0,0.55);z-index:9999;">
+  <div class="text-center text-white">
+    <div class="spinner-border mb-3" style="width:3rem;height:3rem;" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <h5 class="fw-semibold">Analyzing with Gemini AI…</h5>
+    <p class="opacity-75 small">Extracting text, scoring skills, generating feedback…</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// File preview
+document.getElementById('id_resume').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  const preview = document.getElementById('filePreview');
+  if (file) {
+    document.getElementById('fileName').textContent = file.name;
+    document.getElementById('fileSize').textContent = '(' + (file.size / 1024).toFixed(1) + ' KB)';
+    preview.classList.remove('d-none');
+  } else {
+    preview.classList.add('d-none');
+  }
+});
+
+// Show loading overlay on submit
+document.getElementById('uploadForm').addEventListener('submit', function() {
+  const overlay = document.getElementById('loadingOverlay');
+  overlay.classList.remove('d-none');
+  overlay.style.display = 'flex';
+  document.getElementById('submitBtn').disabled = true;
+});
+</script>
+{% endblock %}

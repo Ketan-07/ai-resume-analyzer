@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}About — AI Resume Analyzer{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <h1 class="fw-bold mb-4"><i class="bi bi-info-circle text-primary me-2"></i>About ResumeAI</h1>
+
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+          <h5 class="fw-semibold mb-3">What is this?</h5>
+          <p class="text-muted">
+            AI Resume Analyzer is a production-quality Django web application that uses
+            Google Gemini AI to compare your resume against any job description.
+            It provides a detailed breakdown of your strengths, weaknesses, skills gap,
+            ATS compatibility, and actionable improvement suggestions.
+          </p>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-4">
+          <h5 class="fw-semibold mb-3">Tech Stack</h5>
+          <ul class="list-unstyled">
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Django 5</strong> — Web framework</li>
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Google Gemini API</strong> — AI analysis engine</li>
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Bootstrap 5</strong> — Responsive UI</li>
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>SQLite</strong> — Database</li>
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>PyPDF2</strong> — PDF text extraction</li>
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>ReportLab</strong> — PDF report generation</li>
+            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i><strong>Gunicorn + WhiteNoise</strong> — Production serving</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <h5 class="fw-semibold mb-3">Privacy</h5>
+          <p class="text-muted mb-0">
+            Your resume text is sent to the Google Gemini API for analysis.
+            Uploaded files are stored locally. We do not share your data with third parties.
+            This tool is intended for personal use and learning.
+          </p>
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <a href="{% url 'resume:upload' %}" class="btn btn-primary btn-lg">
+          <i class="bi bi-upload me-2"></i>Try It Now
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

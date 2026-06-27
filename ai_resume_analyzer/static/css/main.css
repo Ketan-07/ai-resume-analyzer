@@ -1,0 +1,197 @@
+/* ── AI Resume Analyzer — Main Stylesheet ─────────────────────────────────── */
+
+:root {
+  --primary: #4f46e5;
+  --primary-light: #eef2ff;
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --dark: #111827;
+  --border-radius: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 12px rgba(0,0,0,.06);
+}
+
+/* ── Typography ── */
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: var(--dark);
+}
+
+/* ── Hero Section ── */
+.hero-section {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #2563eb 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -20%;
+  width: 60%;
+  height: 200%;
+  background: rgba(255,255,255,0.04);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.hero-icon {
+  opacity: 0.9;
+}
+
+/* ── Feature Cards ── */
+.feature-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: var(--border-radius) !important;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(79,70,229,0.15) !important;
+}
+
+/* ── Analysis Cards ── */
+.analysis-card {
+  border-radius: var(--border-radius) !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.analysis-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1) !important;
+}
+
+/* ── Skill Badges ── */
+.badge.rounded-pill {
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* ── Progress Bars ── */
+.progress {
+  border-radius: 100px;
+  background-color: #e9ecef;
+}
+
+.progress-bar {
+  border-radius: 100px;
+  transition: width 0.8s ease;
+}
+
+/* ── Score Ring SVG ── */
+.score-ring circle:last-child {
+  transition: stroke-dasharray 1s ease;
+}
+
+/* ── Cards ── */
+.card {
+  border-radius: var(--border-radius) !important;
+}
+
+.card-header {
+  border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+}
+
+/* ── Navbar ── */
+.navbar-brand {
+  letter-spacing: -0.02em;
+}
+
+.nav-link {
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.5rem 0.75rem !important;
+  border-radius: 8px;
+  transition: background-color 0.15s;
+}
+
+.navbar-dark .nav-link:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+/* ── Upload area ── */
+.form-control[type="file"] {
+  padding: 0.75rem;
+  cursor: pointer;
+}
+
+/* ── Extracted text pre ── */
+.extracted-text {
+  font-family: 'Monaco', 'Consolas', monospace;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+/* ── Step number circles ── */
+.step-number {
+  font-size: 0.9rem;
+}
+
+/* ── Alert customisation ── */
+.alert {
+  border-radius: 10px !important;
+  border: none !important;
+}
+
+.alert-error,
+.alert-danger {
+  background-color: #fef2f2;
+  color: #991b1b;
+}
+
+.alert-success {
+  background-color: #f0fdf4;
+  color: #166534;
+}
+
+.alert-warning {
+  background-color: #fffbeb;
+  color: #92400e;
+}
+
+.alert-info {
+  background-color: #eff6ff;
+  color: #1e40af;
+}
+
+/* ── Button styles ── */
+.btn {
+  font-weight: 500;
+  border-radius: 8px;
+  letter-spacing: 0.01em;
+}
+
+.btn-lg {
+  padding: 0.75rem 2rem;
+}
+
+/* ── Table ── */
+.table th {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+}
+
+/* ── Footer ── */
+footer {
+  font-size: 0.85rem;
+}
+
+/* ── Loading overlay ── */
+#loadingOverlay {
+  backdrop-filter: blur(2px);
+}
+
+/* ── Responsive tweaks ── */
+@media (max-width: 576px) {
+  .hero-section h1 {
+    font-size: 1.75rem;
+  }
+}

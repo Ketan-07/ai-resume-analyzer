@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Analysis History — AI Resume Analyzer{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="fw-bold mb-0">
+      <i class="bi bi-clock-history text-primary me-2"></i>Analysis History
+    </h1>
+    <a href="{% url 'resume:upload' %}" class="btn btn-primary">
+      <i class="bi bi-plus-lg me-1"></i>New Analysis
+    </a>
+  </div>
+
+  {% if analyses %}
+  <div class="row g-4">
+    {% for a in analyses %}
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100 analysis-card">
+        <div class="card-body p-4">
+          <!-- Header row -->
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="flex-grow-1 me-3">
+              <h6 class="fw-semibold mb-1">
+                <i class="bi bi-file-earmark-pdf text-danger me-1"></i>
+                {{ a.resume.original_filename|truncatechars:45 }}
+              </h6>
+              <span class="text-muted small">{{ a.created_at|date:"M d, Y · H:i" }}</span>
+            </div>
+            <span class="badge bg-{% if a.match_score >= 70 %}success{% elif a.match_score >= 40 %}warning{% else %}danger{% endif %} fs-6">
+              {{ a.match_score }}%
+            </span>
+          </div>
+
+          <!-- Scores -->
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <div class="bg-light rounded p-2 text-center">
+                <div class="small text-muted mb-1">Match Score</div>
+                <div class="progress mb-1" style="height:6px;">
+                  <div class="progress-bar bg-{% if a.match_score >= 70 %}success{% elif a.match_score >= 40 %}warning{% else %}danger{% endif %}"
+                       style="width:{{ a.match_score }}%"></div>
+                </div>
+                <strong class="small">{{ a.match_score }}%</strong>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="bg-light rounded p-2 text-center">
+                <div class="small text-muted mb-1">ATS Score</div>
+                <div class="progress mb-1" style="height:6px;">
+                  <div class="progress-bar bg-info"
+                       style="width:{{ a.ats_score }}%"></div>
+                </div>
+                <strong class="small">{{ a.ats_score }}%</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- JD preview -->
+          <p class="small text-muted mb-3 text-truncate">
+            <i class="bi bi-briefcase me-1"></i>{{ a.job_description|truncatechars:90 }}
+          </p>
+
+          <!-- Skills badges -->
+          {% with matching=a.get_matching_skills_list|slice:":4" missing=a.get_missing_skills_list|slice:":3" %}
+          {% if matching %}
+          <div class="mb-2">
+            {% for skill in matching %}
+            <span class="badge bg-success-subtle text-success me-1 mb-1">{{ skill }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% endwith %}
+
+          <!-- Actions -->
+          <div class="mt-3 d-flex gap-2">
+            <a href="{% url 'analysis:detail' a.pk %}" class="btn btn-sm btn-primary flex-grow-1">
+              <i class="bi bi-eye me-1"></i>View Analysis
+            </a>
+            <a href="{% url 'analysis:download' a.pk %}" class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-download"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-5">
+    <i class="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
+    <h5 class="text-muted">No analyses yet</h5>
+    <p class="text-muted small">Upload a resume to get your first AI analysis.</p>
+    <a href="{% url 'resume:upload' %}" class="btn btn-primary mt-2">
+      <i class="bi bi-upload me-1"></i>Analyze Your Resume
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

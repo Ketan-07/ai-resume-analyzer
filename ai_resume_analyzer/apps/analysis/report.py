@@ -1,0 +1,166 @@
+"""
+PDF report generation service using ReportLab.
+Generates a downloadable analysis report for a given Analysis instance.
+"""
+
+import io
+import logging
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import cm
+from reportlab.lib import colors
+from reportlab.platypus import (
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+)
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
+
+logger = logging.getLogger(__name__)
+
+# ── Colour palette ─────────────────────────────────────────────────────────────
+PRIMARY = colors.HexColor("#4f46e5")
+SUCCESS = colors.HexColor("#16a34a")
+WARNING = colors.HexColor("#d97706")
+DANGER = colors.HexColor("#dc2626")
+LIGHT_GREY = colors.HexColor("#f3f4f6")
+DARK_TEXT = colors.HexColor("#111827")
+
+
+def generate_analysis_pdf(analysis) -> bytes:
+    """
+    Generate a PDF report for an Analysis instance.
+
+    Args:
+        analysis: An Analysis model instance.
+
+    Returns:
+        PDF file content as bytes.
+    """
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=A4,
+        rightMargin=2 * cm,
+        leftMargin=2 * cm,
+        topMargin=2 * cm,
+        bottomMargin=2 * cm,
+    )
+
+    styles = getSampleStyleSheet()
+    story = []
+
+    # Custom styles
+    title_style = ParagraphStyle(
+        "CustomTitle",
+        parent=styles["Title"],
+        fontSize=22,
+        textColor=PRIMARY,
+        spaceAfter=6,
+        alignment=TA_CENTER,
+    )
+    heading_style = ParagraphStyle(
+        "SectionHeading",
+        parent=styles["Heading2"],
+        fontSize=13,
+        textColor=PRIMARY,
+        spaceBefore=14,
+        spaceAfter=4,
+    )
+    body_style = ParagraphStyle(
+        "Body",
+        parent=styles["Normal"],
+        fontSize=10,
+        textColor=DARK_TEXT,
+        leading=15,
+    )
+    bullet_style = ParagraphStyle(
+        "Bullet",
+        parent=body_style,
+        leftIndent=14,
+        bulletIndent=0,
+        spaceBefore=2,
+    )
+
+    # ── Title ─────────────────────────────────────────────────────────────────
+    story.append(Paragraph("AI Resume Analysis Report", title_style))
+    story.append(Paragraph(f"Resume: <b>{analysis.resume.original_filename}</b>", body_style))
+    story.append(Paragraph(
+        f"Generated: {analysis.created_at.strftime('%B %d, %Y at %H:%M UTC')}",
+        body_style,
+    ))
+    story.append(HRFlowable(width="100%", thickness=1, color=PRIMARY, spaceAfter=12))
+
+    # ── Score Summary Table ────────────────────────────────────────────────────
+    story.append(Paragraph("Score Summary", heading_style))
+
+    label, _ = analysis.score_label
+    score_data = [
+        ["Metric", "Score", "Rating"],
+        ["Overall Match Score", f"{analysis.match_score}%", _score_rating(analysis.match_score)],
+        ["ATS Compatibility Score", f"{analysis.ats_score}%", _score_rating(analysis.ats_score)],
+    ]
+    score_table = Table(score_data, colWidths=[8 * cm, 4 * cm, 5 * cm])
+    score_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), PRIMARY),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 10),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [LIGHT_GREY, colors.white]),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("ALIGN", (1, 0), (-1, -1), "CENTER"),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    story.append(score_table)
+
+    # ── Skills ────────────────────────────────────────────────────────────────
+    _add_list_section(story, "Matching Skills ✓", analysis.get_matching_skills_list(),
+                      heading_style, bullet_style, bullet_char="✓")
+    _add_list_section(story, "Missing Skills ✗", analysis.get_missing_skills_list(),
+                      heading_style, bullet_style, bullet_char="✗")
+
+    # ── Narrative sections ────────────────────────────────────────────────────
+    _add_list_section(story, "Strengths", analysis.get_strengths_list(),
+                      heading_style, bullet_style)
+    _add_list_section(story, "Areas for Improvement", analysis.get_weaknesses_list(),
+                      heading_style, bullet_style)
+    _add_list_section(story, "Resume Suggestions", analysis.get_suggestions_list(),
+                      heading_style, bullet_style)
+
+    # ── Interview Readiness ────────────────────────────────────────────────────
+    story.append(Paragraph("Interview Readiness", heading_style))
+    story.append(Paragraph(analysis.interview_readiness or "N/A", body_style))
+
+    # ── Footer ────────────────────────────────────────────────────────────────
+    story.append(Spacer(1, 20))
+    story.append(HRFlowable(width="100%", thickness=0.5, color=colors.grey))
+    story.append(Paragraph(
+        "Generated by AI Resume Analyzer · Powered by Google Gemini",
+        ParagraphStyle("Footer", parent=body_style, fontSize=8,
+                       textColor=colors.grey, alignment=TA_CENTER, spaceBefore=6),
+    ))
+
+    doc.build(story)
+    return buffer.getvalue()
+
+
+def _add_list_section(story, title, items, heading_style, bullet_style, bullet_char="•"):
+    story.append(Paragraph(title, heading_style))
+    if items:
+        for item in items:
+            story.append(Paragraph(f"{bullet_char} {item}", bullet_style))
+    else:
+        from reportlab.lib.styles import getSampleStyleSheet
+        styles = getSampleStyleSheet()
+        story.append(Paragraph("None listed.", bullet_style))
+
+
+def _score_rating(score: int) -> str:
+    if score >= 80:
+        return "Excellent"
+    elif score >= 60:
+        return "Good"
+    elif score >= 40:
+        return "Fair"
+    else:
+        return "Needs Work"

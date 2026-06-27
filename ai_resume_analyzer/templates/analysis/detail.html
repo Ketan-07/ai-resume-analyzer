@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+{% block title %}Analysis Results — {{ analysis.resume.original_filename }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+  <!-- Header -->
+  <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+    <div>
+      <a href="{% url 'analysis:list' %}" class="text-decoration-none text-muted small">
+        <i class="bi bi-arrow-left me-1"></i>Back to History
+      </a>
+      <h1 class="fw-bold mb-1 mt-1">Analysis Results</h1>
+      <p class="text-muted mb-0">
+        <i class="bi bi-file-earmark-pdf text-danger me-1"></i>
+        {{ analysis.resume.original_filename }}
+        <span class="ms-2 text-muted small">· {{ analysis.created_at|date:"M d, Y H:i" }}</span>
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'analysis:download' analysis.pk %}" class="btn btn-outline-danger">
+        <i class="bi bi-file-earmark-pdf me-1"></i>Download PDF
+      </a>
+      <a href="{% url 'resume:upload' %}" class="btn btn-primary">
+        <i class="bi bi-arrow-repeat me-1"></i>New Analysis
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Score Cards ─────────────────────────────────────────────────────── -->
+  <div class="row g-4 mb-4">
+    <!-- Match Score -->
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body p-4 text-center">
+          <h6 class="text-muted fw-normal mb-3">
+            <i class="bi bi-bullseye me-1"></i>Overall Match Score
+          </h6>
+          <div class="score-ring mx-auto mb-3"
+               style="--score:{{ analysis.match_score }};--color:var(--bs-{{ score_color }});">
+            <svg viewBox="0 0 120 120" width="120" height="120">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#e9ecef" stroke-width="10"/>
+              <circle cx="60" cy="60" r="50" fill="none"
+                      stroke="{% if score_color == 'success' %}#16a34a{% elif score_color == 'warning' %}#d97706{% elif score_color == 'primary' %}#4f46e5{% else %}#dc2626{% endif %}"
+                      stroke-width="10"
+                      stroke-dasharray="{{ analysis.match_score|floatformat:0 }} 100"
+                      stroke-dashoffset="25"
+                      stroke-linecap="round"
+                      pathLength="100"
+                      transform="rotate(-90 60 60)"/>
+              <text x="60" y="65" text-anchor="middle" font-size="22" font-weight="bold"
+                    fill="{% if score_color == 'success' %}#16a34a{% elif score_color == 'warning' %}#d97706{% elif score_color == 'primary' %}#4f46e5{% else %}#dc2626{% endif %}">
+                {{ analysis.match_score }}%
+              </text>
+            </svg>
+          </div>
+          <span class="badge bg-{{ score_color }} fs-6 px-3 py-2">{{ score_label }}</span>
+          <div class="mt-3">
+            <div class="progress" style="height:8px;">
+              <div class="progress-bar bg-{{ score_color }}"
+                   style="width:{{ analysis.match_score }}%" role="progressbar"
+                   aria-valuenow="{{ analysis.match_score }}" aria-valuemin="0" aria-valuemax="100">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ATS Score -->
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body p-4 text-center">
+          <h6 class="text-muted fw-normal mb-3">
+            <i class="bi bi-robot me-1"></i>ATS Compatibility Score
+          </h6>
+          {% with ats=analysis.ats_score %}
+          <div class="mx-auto mb-3">
+            <svg viewBox="0 0 120 120" width="120" height="120">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#e9ecef" stroke-width="10"/>
+              <circle cx="60" cy="60" r="50" fill="none"
+                      stroke="{% if ats >= 70 %}#16a34a{% elif ats >= 40 %}#d97706{% else %}#dc2626{% endif %}"
+                      stroke-width="10"
+                      stroke-dasharray="{{ ats }} 100"
+                      stroke-dashoffset="25"
+                      stroke-linecap="round"
+                      pathLength="100"
+                      transform="rotate(-90 60 60)"/>
+              <text x="60" y="65" text-anchor="middle" font-size="22" font-weight="bold"
+                    fill="{% if ats >= 70 %}#16a34a{% elif ats >= 40 %}#d97706{% else %}#dc2626{% endif %}">
+                {{ ats }}%
+              </text>
+            </svg>
+          </div>
+          <span class="badge bg-{% if ats >= 70 %}success{% elif ats >= 40 %}warning{% else %}danger{% endif %} fs-6 px-3 py-2">
+            {% if ats >= 70 %}ATS Friendly{% elif ats >= 40 %}Needs Improvement{% else %}Poor ATS{% endif %}
+          </span>
+          <div class="mt-3">
+            <div class="progress" style="height:8px;">
+              <div class="progress-bar bg-{% if ats >= 70 %}success{% elif ats >= 40 %}warning{% else %}danger{% endif %}"
+                   style="width:{{ ats }}%" role="progressbar"></div>
+            </div>
+          </div>
+          {% endwith %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Skills ──────────────────────────────────────────────────────────── -->
+  <div class="row g-4 mb-4">
+    <!-- Matching Skills -->
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-success-subtle border-0 py-3">
+          <h6 class="mb-0 fw-semibold text-success">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            Matching Skills
+            <span class="badge bg-success ms-2">{{ matching_skills|length }}</span>
+          </h6>
+        </div>
+        <div class="card-body p-4">
+          {% if matching_skills %}
+            <div class="d-flex flex-wrap gap-2">
+              {% for skill in matching_skills %}
+              <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+                <i class="bi bi-check2 me-1"></i>{{ skill }}
+              </span>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-muted mb-0"><em>No matching skills identified.</em></p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Missing Skills -->
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-danger-subtle border-0 py-3">
+          <h6 class="mb-0 fw-semibold text-danger">
+            <i class="bi bi-x-circle-fill me-2"></i>
+            Missing Skills
+            <span class="badge bg-danger ms-2">{{ missing_skills|length }}</span>
+          </h6>
+        </div>
+        <div class="card-body p-4">
+          {% if missing_skills %}
+            <div class="d-flex flex-wrap gap-2">
+              {% for skill in missing_skills %}
+              <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 rounded-pill">
+                <i class="bi bi-x-lg me-1"></i>{{ skill }}
+              </span>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-muted mb-0"><em>No significant missing skills.</em></p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Strengths & Weaknesses ──────────────────────────────────────────── -->
+  <div class="row g-4 mb-4">
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-primary-subtle border-0 py-3">
+          <h6 class="mb-0 fw-semibold text-primary">
+            <i class="bi bi-hand-thumbs-up-fill me-2"></i>Strengths
+          </h6>
+        </div>
+        <div class="card-body p-4">
+          {% if strengths %}
+          <ul class="list-unstyled mb-0">
+            {% for item in strengths %}
+            <li class="mb-2 d-flex gap-2">
+              <i class="bi bi-plus-circle-fill text-primary mt-1 flex-shrink-0"></i>
+              <span>{{ item }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-muted mb-0"><em>No specific strengths listed.</em></p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-warning-subtle border-0 py-3">
+          <h6 class="mb-0 fw-semibold text-warning">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>Areas for Improvement
+          </h6>
+        </div>
+        <div class="card-body p-4">
+          {% if weaknesses %}
+          <ul class="list-unstyled mb-0">
+            {% for item in weaknesses %}
+            <li class="mb-2 d-flex gap-2">
+              <i class="bi bi-dash-circle-fill text-warning mt-1 flex-shrink-0"></i>
+              <span>{{ item }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-muted mb-0"><em>No specific weaknesses noted.</em></p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Resume Suggestions ─────────────────────────────────────────────── -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-info-subtle border-0 py-3">
+      <h6 class="mb-0 fw-semibold text-info">
+        <i class="bi bi-lightbulb-fill me-2"></i>Resume Improvement Suggestions
+      </h6>
+    </div>
+    <div class="card-body p-4">
+      {% if suggestions %}
+      <ol class="mb-0 ps-3">
+        {% for item in suggestions %}
+        <li class="mb-3">
+          <span>{{ item }}</span>
+        </li>
+        {% endfor %}
+      </ol>
+      {% else %}
+      <p class="text-muted mb-0"><em>No suggestions provided.</em></p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── Interview Readiness ────────────────────────────────────────────── -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-secondary-subtle border-0 py-3">
+      <h6 class="mb-0 fw-semibold">
+        <i class="bi bi-person-video2 me-2"></i>Interview Readiness Assessment
+      </h6>
+    </div>
+    <div class="card-body p-4">
+      <p class="mb-0 lead fs-6">{{ analysis.interview_readiness|default:"No assessment available." }}</p>
+    </div>
+  </div>
+
+  <!-- ── Job Description Preview ────────────────────────────────────────── -->
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-light border-0 py-3 d-flex justify-content-between align-items-center">
+      <h6 class="mb-0 fw-semibold">
+        <i class="bi bi-briefcase me-2"></i>Job Description Used
+      </h6>
+      <button class="btn btn-sm btn-outline-secondary" type="button"
+              data-bs-toggle="collapse" data-bs-target="#jdCollapse" aria-expanded="false">
+        <i class="bi bi-chevron-down"></i> Toggle
+      </button>
+    </div>
+    <div class="collapse" id="jdCollapse">
+      <div class="card-body p-4">
+        <pre class="small text-muted mb-0"
+             style="white-space:pre-wrap;word-wrap:break-word;max-height:300px;overflow-y:auto;">{{ analysis.job_description }}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="text-center mt-5">
+    <a href="{% url 'resume:upload' %}" class="btn btn-primary btn-lg me-2">
+      <i class="bi bi-arrow-repeat me-1"></i>Analyze Another Resume
+    </a>
+    <a href="{% url 'analysis:download' analysis.pk %}" class="btn btn-outline-danger btn-lg">
+      <i class="bi bi-download me-1"></i>Download Report
+    </a>
+  </div>
+
+</div>
+{% endblock %}
