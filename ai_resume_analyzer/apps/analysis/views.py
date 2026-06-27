@@ -33,7 +33,13 @@ def create(request, resume_id):
         result = analyze_resume(resume.extracted_text, job_description)
     except GeminiAnalysisError as exc:
         logger.error("Analysis failed for resume %d: %s", resume_id, exc)
-        messages.error(request, str(exc))
+        error_msg = str(exc)
+        if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg or "quota" in error_msg.lower():
+            error_msg = (
+                "Gemini API quota exceeded. This usually means you've hit the free daily limit. "
+                "Try again in a few minutes, or upgrade at https://ai.google.dev/pricing"
+            )
+        messages.error(request, error_msg)
         return redirect("resume:upload")
 
     analysis = Analysis.objects.create(

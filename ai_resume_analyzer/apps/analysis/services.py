@@ -9,6 +9,7 @@ All AI logic lives here — views never call Gemini directly.
 import json
 import logging
 import re
+import time
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
@@ -60,6 +61,7 @@ Definitions:
 def analyze_resume(resume_text: str, job_description: str) -> dict:
     """
     Send resume text and job description to Gemini and return parsed results.
+    Automatically retries with backoff and falls back to alternative models on 429.
 
     Args:
         resume_text: Extracted plain text from the resume PDF.
@@ -71,7 +73,7 @@ def analyze_resume(resume_text: str, job_description: str) -> dict:
         and raw_response.
 
     Raises:
-        GeminiAnalysisError: If the API call fails or response is unparseable.
+        GeminiAnalysisError: If all attempts fail.
     """
     if not settings.GEMINI_API_KEY:
         raise GeminiAnalysisError(
@@ -80,33 +82,50 @@ def analyze_resume(resume_text: str, job_description: str) -> dict:
 
     try:
         from google import genai
+        from google.genai import errors as genai_errors
         client = genai.Client(api_key=settings.GEMINI_API_KEY)
     except Exception as exc:
         logger.error("Failed to initialise Gemini client: %s", exc)
         raise GeminiAnalysisError("Could not connect to the Gemini API.") from exc
 
     prompt = ANALYSIS_PROMPT.format(
-        resume_text=resume_text[:8000],       # Truncate to stay within token limits
+        resume_text=resume_text[:8000],
         job_description=job_description[:4000],
     )
 
-    logger.info("Sending analysis request to Gemini model: %s", settings.GEMINI_MODEL)
+    models = [settings.GEMINI_MODEL] + list(getattr(settings, "GEMINI_FALLBACK_MODELS", []))
+    last_error = None
 
-    try:
-        response = client.models.generate_content(
-            model=settings.GEMINI_MODEL,
-            contents=prompt,
-        )
-        raw_text = response.text
-    except Exception as exc:
-        logger.error("Gemini API call failed: %s", exc)
-        raise GeminiAnalysisError(f"Gemini API error: {exc}") from exc
+    for attempt in range(1, 4):
+        for model in models:
+            logger.info("Attempt %d with model: %s", attempt, model)
+            try:
+                response = client.models.generate_content(
+                    model=model,
+                    contents=prompt,
+                )
+                raw_text = response.text
+                logger.debug("Raw Gemini response: %s", raw_text[:500])
+                parsed = _parse_gemini_response(raw_text)
+                parsed["raw_response"] = raw_text
+                return parsed
+            except genai_errors.ClientError as exc:
+                last_error = exc
+                if "429" in str(exc) or "RESOURCE_EXHAUSTED" in str(exc):
+                    logger.warning("Quota exceeded on %s: %s", model, exc)
+                    time.sleep(2)
+                    continue
+                logger.error("Gemini API client error on %s: %s", model, exc)
+                break
+            except Exception as exc:
+                last_error = exc
+                logger.error("Gemini API call failed on %s: %s", model, exc)
+                continue
+        time.sleep(3 * attempt)
 
-    logger.debug("Raw Gemini response: %s", raw_text[:500])
-
-    parsed = _parse_gemini_response(raw_text)
-    parsed["raw_response"] = raw_text
-    return parsed
+    raise GeminiAnalysisError(
+        f"Gemini API error after all retries: {last_error}"
+    ) from last_error
 
 
 def _parse_gemini_response(raw_text: str) -> dict:

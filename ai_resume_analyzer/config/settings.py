@@ -98,7 +98,8 @@ ALLOWED_RESUME_EXTENSIONS = [".pdf"]
 
 # ─── Google Gemini ────────────────────────────────────────────────────────────
 GEMINI_API_KEY = config("GEMINI_API_KEY", default="")
-GEMINI_MODEL = "gemini-2.0-flash"
+GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_FALLBACK_MODELS = ["gemini-2.0-flash", "gemini-1.5-pro"]
 
 # ─── Logging ──────────────────────────────────────────────────────────────────
 LOGGING = {
